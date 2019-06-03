@@ -19,8 +19,13 @@ Auth::routes();
 
 Route::get('/home', 'HomeController@index')->name('home');
 
-//重設密碼
+// 重設密碼網頁
 Route::get('/reset', function(){
     return view('auth.passwords.reset2');
 });
+
+// 驗證reCAPTCHA
+
+Route::post('/recaptcha', 'CaptchaController@verify_captcha')->name('verifyRecaptcha');
+
 

@@ -1,6 +1,68 @@
 @extends('layouts.app')
 
+{{--  reCAPTCHA  --}}
+<script src="https://www.google.com/recaptcha/api.js?hl=zh-TW&render=explicit&onload=onReCaptchaLoad" async defer></script>
+
+<script>
+var captchaWidgetId;   
+var onReCaptchaLoad = function() {   
+  
+            captchaWidgetId = grecaptcha.render( 'myCaptcha', {   
+                'sitekey' : "{{ env('CAPTCHA_SITEKEY') }}",  // (required)   
+                'theme' : 'light',  // (optional)   
+                'callback': 'verifyCallback',  // (optional) executed when the user submits a successful response.
+                'expired-callback':'',  // (optional) executed when the reCAPTCHA response expires and the user needs to re-verify.
+                'error-callback':''  // (optional) executed when reCAPTCHA encounters an error (usually network connectivity) and cannot continue until connectivity is restored. 
+                                     //            If you specify a function here, you are responsible for informing the user that they should retry.
+            });   
+};   
+
+var verifyCallback = function( recaptcha ) {
+
+    console.log(grecaptcha.getResponse(captchaWidgetId)); 
+
+        // 發送 Ajax 查詢請求並處理
+        var request = new XMLHttpRequest();
+        request.open("POST", "{{ route('verifyRecaptcha')}}");
+     
+        // POST 參數須使用 send() 發送
+        var data = "id=" + grecaptcha.getResponse(captchaWidgetId);
+     
+        // POST 請求必須設置表頭在 open() 下面，send() 上面
+        request.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+        request.setRequestHeader('X-CSRF-TOKEN', $('meta[name="csrf-token"]').attr('content'));
+        request.send(data);
+     
+        request.onreadystatechange = function() {
+            // 伺服器請求完成
+            if (request.readyState === 4) {
+                // 伺服器回應成功
+                if (request.status === 200) {
+                    //將取得的結果做json解析
+                    var verifyCaptchaResult = JSON.parse(request.responseText);
+                    //取success的結果值
+                    document.getElementById("result").innerHTML=verifyCaptchaResult.success;
+                    
+                } else {
+                    console.log("error");
+                }
+            }
+        }
+    
+
+    
+    
+    
+
+    
+  
+};  
+</script>
+
+
+
 @section('content')
+
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-8">
@@ -35,6 +97,25 @@
                                 {{ __('發送驗證碼') }}
                             </a>
                         </div>
+
+                        {{--  package noCAPTCHA  --}}
+                        {{--  <div class="form-group{{ $errors->has('g-recaptcha-response') ? ' has-error' : '' }}">
+                            <label class="col-md-4 control-label">Captcha</label>
+                            <div class="col-md-6">
+                                {!! app('captcha')->display() !!}
+                                @if ($errors->has('g-recaptcha-response'))
+                                    <span class="help-block">
+                                        <strong>{{ $errors->first('g-recaptcha-response') }}</strong>
+                                    </span>
+                                @endif
+                            </div>
+                        </div>  --}}
+
+                        
+                        {{-- for getting reCAPTCHA response --}}
+                        <div id="myCaptcha"></div> 
+                        <div id="result"></div> 
+                        
 
                         <div class="form-group row">
                             <label for="password" class="col-md-4 col-form-label text-md-right">{{ __('新密碼') }}</label>
