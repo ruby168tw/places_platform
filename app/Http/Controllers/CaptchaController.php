@@ -29,8 +29,37 @@ class CaptchaController extends Controller
         return response($result);
     }
 
-    function send_msg()
+    function send_msg(Request $request)
     {
 
+        /** to do 
+         * 驗證電話號碼格式:
+         * 如果是9碼，開頭要為9
+         * 如果是10碼，開頭要為09
+         */
+        $code = rand(111111,999999);
+        $url = 'http://smsapi.mitake.com.tw/api/mtk/SmSend?'; 
+        $url .= '&username='.env('MITAKE_USERNAME');
+        $url .= '&password='.env('MITAKE_PASSWORD');
+        $url .= '&dstaddr='.$request->phone;
+        $url .= '&smbody='.urlencode($code);
+        // $url .= '&clientid='.$request->phone; 
+        $url .= '&CharsetURL=UTF-8';
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-type: application/x-www-form-urlencoded'));
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1); 
+        $output = curl_exec($curl);
+        curl_close($curl);
+        $array_output = explode("\n", $output);
+        print_r($array_output);
+        /**
+         * to do 1
+         * 將phone,reCAPTCHAid, statuscode, smscode, created_at
+         * 存進msgcode_verification table中
+         * to do 2
+         * 將phone, smscode
+         * 存進password_resets
+         */
     }
 }

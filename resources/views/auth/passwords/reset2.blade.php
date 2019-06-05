@@ -17,7 +17,8 @@ var onReCaptchaLoad = function() {
             });   
 };   
 
-var verifyCallback = function( recaptcha ) {
+var verifyCallback = function( recaptcha ) 
+{
 
     console.log(grecaptcha.getResponse(captchaWidgetId)); 
 
@@ -42,21 +43,53 @@ var verifyCallback = function( recaptcha ) {
                     var verifyCaptchaResult = JSON.parse(request.responseText);
                     //取success的結果值
                     document.getElementById("result").innerHTML=verifyCaptchaResult.success;
+                    //reCAPTCHA驗證成功
+                    if (document.getElementById("result").innerHTML == "true")
+                    {
+                        
+                        sendMsg();
+                    }
                     
-                } else {
-                    console.log("error");
+                } 
+                else 
+                {
+                    console.log("reCAPTCHA error");
                 }
             }
         }
-    
+};
 
-    
-    
-    
+function sendMsg()
+{
+    // 發送 Ajax 查詢請求並處理
+    var sending = new XMLHttpRequest();
+    sending.open("POST", "{{ route('send_msg')}}");
+ 
+    // POST 參數須使用 send() 發送
+    var msgData = "id=" + grecaptcha.getResponse(captchaWidgetId) + "&phone=" + document.getElementById("phone").value;
+    console.log(msgData);
+ 
+    // POST 請求必須設置表頭在 open() 下面，send() 上面
+    sending.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+    sending.setRequestHeader('X-CSRF-TOKEN', $('meta[name="csrf-token"]').attr('content'));
+    sending.send(msgData);
+ 
+    sending.onreadystatechange = function() {
+        // 伺服器請求完成
+        if (sending.readyState === 4) {
+            // 伺服器回應成功
+            if (sending.status === 200) {
+            
+                console.log(sending.responseText);
+            }
+            else
+            {
+                console.log("msg fail");
+            }
+        }
+    }
+}
 
-    
-  
-};  
 </script>
 
 
@@ -70,7 +103,7 @@ var verifyCallback = function( recaptcha ) {
                 <div class="card-header">{{ __('重設密碼') }}</div>
 
                 <div class="card-body">
-                    <form method="POST" action="">
+                    <form method="POST" action="{{ route('password.update') }}">
                         @csrf
 
                         <div class="form-group row">
@@ -88,33 +121,17 @@ var verifyCallback = function( recaptcha ) {
                         </div>
 
                         <div class="form-group row">
-                            <label for="sms-verify" class="col-md-4 col-form-label text-md-right">{{ __('簡訊驗證碼') }}</label>
+                            <label for="smscode" class="col-md-4 col-form-label text-md-right">{{ __('簡訊驗證碼') }}</label>
 
                             <div class="col-md-6">
-                                <input id="sms-verify" type="smscode" class="form-control" name="sms-verify" required >
+                                <input id="smscode" type="smscode" class="form-control @error('smscode') is-invalid @enderror" name="smscode" value="{{ $smscode ?? old('smscode') }}" required >
                             </div>
                             <a class="btn btn-link" href="#">
                                 {{ __('發送驗證碼') }}
                             </a>
                         </div>
-
-                        {{--  package noCAPTCHA  --}}
-                        {{--  <div class="form-group{{ $errors->has('g-recaptcha-response') ? ' has-error' : '' }}">
-                            <label class="col-md-4 control-label">Captcha</label>
-                            <div class="col-md-6">
-                                {!! app('captcha')->display() !!}
-                                @if ($errors->has('g-recaptcha-response'))
-                                    <span class="help-block">
-                                        <strong>{{ $errors->first('g-recaptcha-response') }}</strong>
-                                    </span>
-                                @endif
-                            </div>
-                        </div>  --}}
-
                         
-                        {{-- for getting reCAPTCHA response --}}
-                        <div id="myCaptcha"></div> 
-                        <div id="result"></div> 
+                        
                         
 
                         <div class="form-group row">
@@ -138,6 +155,10 @@ var verifyCallback = function( recaptcha ) {
                                 <input id="password-confirm" type="password" class="form-control" name="password_confirmation" required autocomplete="new-password">
                             </div>
                         </div>
+
+                        {{-- for getting reCAPTCHA response --}}
+                        <div id="myCaptcha"></div> 
+                        <div id="result"></div> 
 
                         <div class="form-group row mb-0">
                             <div class="col-md-6 offset-md-4">
