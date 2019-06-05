@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use SmscodeVerification;
 
 class CaptchaController extends Controller
 {
@@ -29,7 +30,7 @@ class CaptchaController extends Controller
         return response($result);
     }
 
-    function send_msg(Request $request)
+    function send_sms(Request $request)
     {
 
         /** to do 
@@ -51,15 +52,51 @@ class CaptchaController extends Controller
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1); 
         $output = curl_exec($curl);
         curl_close($curl);
-        $array_output = explode("\n", $output);
-        print_r($array_output);
+        $array_outputs = explode("\n", $output);
+        print_r($array_outputs);
         /**
-         * to do 1
-         * 將phone,reCAPTCHAid, statuscode, smscode, created_at
-         * 存進msgcode_verification table中
          * to do 2
          * 將phone, smscode
          * 存進password_resets
          */
+
+        //  解析三竹系統的response
+         foreach ($array_outputs as $array_output) 
+         {
+             if (preg_match("/statuscode/i", $array_output))
+             {
+                $statuscode = strchr($array_output, "="); // 取"="之後，包含"="的所有字串
+                $statuscode = str_replace("=", "",$statuscode); //將"="去除
+                $statuscode = trim($statuscode); //去除空白
+             }
+
+             if (preg_match("/msgid/i", $array_output))
+             {
+                $msgid = strchr($array_output, "="); // 取"="之後，包含"="的所有字串
+                $msgid = str_replace("=", "",$msgid); //將"="去除
+                $msgid = trim($msgid); //去除空白
+             }
+
+             if (preg_match("/Error/i", $array_output))
+             {
+                $error = strchr($array_output, "="); // 取"="之後，包含"="的所有字串
+                $error = str_replace("=", "",$error); //將"="去除
+                $error = trim($error); //去除空白
+             }
+         }
+
+        //  存發送簡訊驗證碼紀錄
+         if (empty($msgid))
+         {
+            \App\SmscodeVerification::create(['phone' => $request->phone, 'captcha' => $request->id, 'statuscode' => $statuscode, 'error' => $error, 'smscode' => $code]);
+         }
+         else
+         {
+            \App\SmscodeVerification::create(['phone' => $request->phone, 'captcha' => $request->id, 'statuscode' => $statuscode, 'msgid' => $msgid, 'smscode' => $code]);
+         }
+
+         
+
+         
     }
 }

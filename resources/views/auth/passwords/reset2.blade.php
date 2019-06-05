@@ -110,7 +110,7 @@ function sendMsg()
                             <label for="phone" class="col-md-4 col-form-label text-md-right">{{ __('手機號碼') }}</label>
 
                             <div class="col-md-6">
-                                <input id="phone" type="phone" class="form-control @error('phone') is-invalid @enderror" name="phone" value="{{ $phone ?? old('phone') }}" required autocomplete="phone" autofocus>
+                                <input id="phone" type="phone" class="form-control" name="phone" value="{{ $phone ?? old('phone') }}" required autocomplete="phone" autofocus>
 
                                 @error('phone')
                                     <span class="invalid-feedback" role="alert">
@@ -124,7 +124,7 @@ function sendMsg()
                             <label for="smscode" class="col-md-4 col-form-label text-md-right">{{ __('簡訊驗證碼') }}</label>
 
                             <div class="col-md-6">
-                                <input id="smscode" type="smscode" class="form-control @error('smscode') is-invalid @enderror" name="smscode" value="{{ $smscode ?? old('smscode') }}" required >
+                                <input id="smscode" type="smscode" class="form-control" name="smscode" value="{{ $smscode ?? old('smscode') }}" required >
                             </div>
                             <a class="btn btn-link" href="#">
                                 {{ __('發送驗證碼') }}
@@ -138,7 +138,7 @@ function sendMsg()
                             <label for="password" class="col-md-4 col-form-label text-md-right">{{ __('新密碼') }}</label>
 
                             <div class="col-md-6">
-                                <input id="password" type="password" class="form-control @error('password') is-invalid @enderror" name="password" required autocomplete="new-password">
+                                <input id="password" type="password" class="form-control" name="password" required autocomplete="new-password">
 
                                 @error('password')
                                     <span class="invalid-feedback" role="alert">
