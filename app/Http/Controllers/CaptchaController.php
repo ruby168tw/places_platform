@@ -4,10 +4,22 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use SmscodeVerification;
+use User;
 
 class CaptchaController extends Controller
 {
-    function verify_captcha(Request $request)
+
+    // 執行驗證碼發送及記錄
+    public function execute_sneding_and_record(Request $request)
+    {
+        $mitake_response = $this->send_sms($request);
+        $mitake_results = $this->parse_msg_response($mitake_response);
+        $this->save_into_db($mitake_results, $mitake_response);
+    }
+
+    
+    // 取得reCAPTCHA驗證結果
+    public function verify_captcha(Request $request)
     {
         //init curl
         $ch = curl_init();
@@ -30,7 +42,7 @@ class CaptchaController extends Controller
         return response($result);
     }
 
-    function send_sms(Request $request)
+    public function send_sms(Request $request)
     {
 
         /** to do 
@@ -53,50 +65,80 @@ class CaptchaController extends Controller
         $output = curl_exec($curl);
         curl_close($curl);
         $array_outputs = explode("\n", $output);
-        print_r($array_outputs);
-        /**
-         * to do 2
-         * 將phone, smscode
-         * 存進password_resets
-         */
 
-        //  解析三竹系統的response
-         foreach ($array_outputs as $array_output) 
-         {
-             if (preg_match("/statuscode/i", $array_output))
-             {
+        // 放phone和code和captchaid進array_outputs
+        $array_outputs['phone'] = $request->phone;
+        $array_outputs['smscode'] = $code;
+        $array_outputs['captcha'] = $request->id;
+        
+        return $array_outputs;
+    }
+
+
+    //  解析三竹系統的response
+    public function parse_msg_response($array_outputs)
+    {
+        foreach ($array_outputs as $array_output) 
+        {
+            if (preg_match("/statuscode/i", $array_output))
+            {
                 $statuscode = strchr($array_output, "="); // 取"="之後，包含"="的所有字串
                 $statuscode = str_replace("=", "",$statuscode); //將"="去除
                 $statuscode = trim($statuscode); //去除空白
-             }
+            }
 
-             if (preg_match("/msgid/i", $array_output))
-             {
+            if (preg_match("/msgid/i", $array_output))
+            {
                 $msgid = strchr($array_output, "="); // 取"="之後，包含"="的所有字串
                 $msgid = str_replace("=", "",$msgid); //將"="去除
                 $msgid = trim($msgid); //去除空白
-             }
+            }
 
-             if (preg_match("/Error/i", $array_output))
-             {
+            if (preg_match("/Error/i", $array_output))
+            {
                 $error = strchr($array_output, "="); // 取"="之後，包含"="的所有字串
                 $error = str_replace("=", "",$error); //將"="去除
                 $error = trim($error); //去除空白
-             }
-         }
+            }
+        }
 
-        //  存發送簡訊驗證碼紀錄
-         if (empty($msgid))
-         {
-            \App\SmscodeVerification::create(['phone' => $request->phone, 'captcha' => $request->id, 'statuscode' => $statuscode, 'error' => $error, 'smscode' => $code]);
-         }
-         else
-         {
-            \App\SmscodeVerification::create(['phone' => $request->phone, 'captcha' => $request->id, 'statuscode' => $statuscode, 'msgid' => $msgid, 'smscode' => $code]);
-         }
-
-         
-
-         
+        if (empty($msgid))
+        {
+            $mitake_results = 
+            [
+                "statuscode" => $statuscode,
+                "error" => $error
+            ];
+        }
+        else 
+        {
+            $mitake_results = 
+            [
+                "statuscode" => $statuscode,
+                "msgid" => $msgid
+            ];    
+        }
+        return $mitake_results;
     }
+
+    //  存發送簡訊驗證碼紀錄
+    public function save_into_db($mitake_results, $params)
+    {
+        
+        if (empty($mitake_results['msgid']))
+        {
+            \App\SmscodeVerification::create(['phone' => $params['phone'], 'captcha' => $params['captcha'], 'statuscode' => $mitake_results['statuscode'], 'error' => $mitake_results['error'], 'smscode' => $params['smscode']]);
+        }
+        else
+        {
+            \App\SmscodeVerification::create(['phone' => $params['phone'], 'captcha' => $params['captcha'], 'statuscode' => $mitake_results['statuscode'], 'msgid' => $mitake_results['msgid'], 'smscode' => $params['smscode']]);
+        }
+
+        /**
+         * to do 2 (待思考)
+         * 將phone, smscode
+         * 存進password_resets
+         */
+    }
+
 }

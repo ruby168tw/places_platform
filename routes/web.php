@@ -23,7 +23,5 @@ Route::get('/home', 'HomeController@index')->name('home');
 Route::post('/recaptcha', 'CaptchaController@verify_captcha')->name('verifyRecaptcha');
 
 // 發送簡訊(三竹)
-Route::post('/msg', 'CaptchaController@send_sms')->name('send_msg');
-
-
+Route::post('/msg', 'CaptchaController@execute_sneding_and_record')->name('send_msg');
 
