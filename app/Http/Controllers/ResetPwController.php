@@ -5,11 +5,17 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Validator;
-use User;
-use password_reset;
+use App\User;
+use App\SmscodeVerification;
+use DB;
 
 class ResetPwController extends Controller
 {
+    /**
+     * to do
+     * 1. code 失效時間審核
+     */
+
     // show 重設密碼頁面
     public function showResetPwForm()
     {
@@ -24,11 +30,27 @@ class ResetPwController extends Controller
        
        if ($validator->passes())
        {
-           if (User::where('phone', $request->phone)->where('phone', $request->phone)->first)
-           {
+           $user = new User();
 
+           if ($user->check_phone($request->phone))
+           {
+               $record = new SmscodeVerification();
+
+
+               if ($record->phone_smscode_verification_result($request->phone, $request->smscode))
+               {
+                    $user->update_password($request->phone, $request->password);
+                    echo "更改完成";
+               }
+               else
+               {
+                    echo "phone:".$request->phone."smscode:".$request->smscode."輸入資訊有誤，請再次確認";
+               }
            }
-           $resetPwRecord = password_reset::firstOrCreate(['phone' => $request->phone, 'smscode' => $request->smscode]);
+           else
+           {
+               echo "查無此號碼，請再次確認";
+           }
 
        }
        else 
@@ -49,7 +71,7 @@ class ResetPwController extends Controller
         return [
             'phone' => 'required|digits_between:9,10',
             'smscode' => 'required|digits:6',
-            'password' => 'required|confirmed|min:8',
+            'password' => 'required|confirmed|min:4|max:20',
         ];
     }
 

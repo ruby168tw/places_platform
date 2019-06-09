@@ -3,6 +3,7 @@
 namespace App;
 
 use Illuminate\Database\Eloquent\Model;
+use DB;
 
 class SmscodeVerification extends Model
 {
@@ -10,4 +11,27 @@ class SmscodeVerification extends Model
     [
         'phone', 'captcha', 'statuscode', 'error', 'msgid', 'smscode'
     ];
+
+    // 算當天驗證次數
+    public function count_times($request)
+    {
+        
+        $count = DB::table('smscode_verifications')
+        ->where('phone', $request->phone)
+        ->whereRaw("`created_at` BETWEEN CURRENT_DATE AND date_add(now(), interval 1 day)")
+        ->count();
+
+        return($count);
+    }
+
+    
+    // 查詢"phone"與"smscode"是否正確
+    public function phone_smscode_verification_result($phone, $smscode)
+    {
+        return SmscodeVerification::where('phone', $phone)
+        ->where('smscode', $smscode)
+        ->whereRaw("`created_at` BETWEEN CURRENT_DATE AND date_add(now(), interval 1 day)")
+        ->orderBy('created_at', 'desc')
+        ->firstOrFail();
+    }
 }

@@ -45,8 +45,7 @@ var verifyCallback = function( recaptcha )
                     document.getElementById("result").innerHTML=verifyCaptchaResult.success;
                     //reCAPTCHA驗證成功
                     if (document.getElementById("result").innerHTML == "true")
-                    {
-                        
+                    {                        
                         sendMsg();
                     }
                     
@@ -74,13 +73,15 @@ function sendMsg()
     sending.setRequestHeader('X-CSRF-TOKEN', $('meta[name="csrf-token"]').attr('content'));
     sending.send(msgData);
  
-    sending.onreadystatechange = function() {
+    sending.onreadystatechange = function() 
+    {
         // 伺服器請求完成
-        if (sending.readyState === 4) {
+        if (sending.readyState === 4) 
+        {
             // 伺服器回應成功
-            if (sending.status === 200) {
-            
-                console.log(sending.responseText);
+            if (sending.status === 200) 
+            {
+                console.log("msg OK");
             }
             else
             {
@@ -126,7 +127,7 @@ function sendMsg()
                             <div class="col-md-6">
                                 <input id="smscode" type="smscode" class="form-control" name="smscode" value="{{ $smscode ?? old('smscode') }}" required >
                             </div>
-                            <a class="btn btn-link" href="#">
+                            <a class="btn btn-link" href="{{ route('callRecaptcha') }}">
                                 {{ __('發送驗證碼') }}
                             </a>
                         </div>
