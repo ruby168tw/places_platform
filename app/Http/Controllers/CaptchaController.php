@@ -18,7 +18,16 @@ class CaptchaController extends Controller
         {
             $mitake_response = $this->send_sms($request);
             $mitake_results = $this->parse_msg_response($mitake_response);
-            $this->save_into_db($mitake_results, $mitake_response);
+
+            if ($request->type == "reset")
+            {
+                $this->save_into_db($mitake_results, $mitake_response, "reset");
+            }
+            else if ($request->type == "register")
+            {
+                $this->save_into_db($mitake_results, $mitake_response, "register");
+            }
+            
         }
         else return false;
     }
@@ -129,23 +138,16 @@ class CaptchaController extends Controller
     }
 
     //  存發送簡訊驗證碼紀錄
-    public function save_into_db($mitake_results, $params)
+    public function save_into_db($mitake_results, $params, $type)
     {
-        
         if (empty($mitake_results['msgid']))
         {
-            \App\SmscodeVerification::create(['phone' => $params['phone'], 'captcha' => $params['captcha'], 'statuscode' => $mitake_results['statuscode'], 'error' => $mitake_results['error'], 'smscode' => $params['smscode']]);
+            \App\SmscodeVerification::create(['phone' => $params['phone'], 'captcha' => $params['captcha'], 'statuscode' => $mitake_results['statuscode'], 'error' => $mitake_results['error'], 'smscode' => $params['smscode'], 'type' => $type]);
         }
         else
         {
-            \App\SmscodeVerification::create(['phone' => $params['phone'], 'captcha' => $params['captcha'], 'statuscode' => $mitake_results['statuscode'], 'msgid' => $mitake_results['msgid'], 'smscode' => $params['smscode']]);
-        }
-
-        /**
-         * to do 2 (待思考)
-         * 將phone, smscode
-         * 存進password_resets
-         */
+            \App\SmscodeVerification::create(['phone' => $params['phone'], 'captcha' => $params['captcha'], 'statuscode' => $mitake_results['statuscode'], 'msgid' => $mitake_results['msgid'], 'smscode' => $params['smscode'], 'type' => $type]);
+        }        
     }
 
     // 查詢當日發送驗證次數
@@ -157,7 +159,7 @@ class CaptchaController extends Controller
         {
         // 算當天驗證次數
         $verification = new SmscodeVerification();
-        $count = $verification->count_times($request->phone);
+        $count = $verification->count_times($request->phone, $request->type);
         return response()->json(["times" => $count, "phone" =>true]);
         }
         else 

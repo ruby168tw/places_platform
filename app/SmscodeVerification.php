@@ -9,15 +9,16 @@ class SmscodeVerification extends Model
 {
     protected $fillable = 
     [
-        'phone', 'captcha', 'statuscode', 'error', 'msgid', 'smscode'
+        'phone', 'captcha', 'statuscode', 'error', 'msgid', 'smscode', 'type'
     ];
 
     // 算當天驗證次數
-    public function count_times($phone)
+    public function count_times($phone, $type)
     {
         
         $count = DB::table('smscode_verifications')
         ->where('phone', $phone)
+        ->where('type', $type)
         ->whereRaw("`created_at` BETWEEN CURRENT_DATE AND date_add(now(), interval 1 day)")
         ->count();
 

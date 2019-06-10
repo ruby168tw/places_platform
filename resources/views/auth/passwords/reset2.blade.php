@@ -66,7 +66,7 @@ function sendMsg()
     sending.open("POST", "{{ route('send_msg')}}");
  
     // POST 參數須使用 send() 發送
-    var msgData = "id=" + grecaptcha.getResponse(captchaWidgetId) + "&phone=" + document.getElementById("phone").value;
+    var msgData = "id=" + grecaptcha.getResponse(captchaWidgetId) + "&phone=" + document.getElementById("phone").value + "&type=reset";
     console.log(msgData);
  
     // POST 請求必須設置表頭在 open() 下面，send() 上面
@@ -142,12 +142,12 @@ function check_sending_times(cellphone)
     try 
     {
         // POST 參數須使用 send() 發送
-        var phone = "phone=" + cellphone;
+        var params = "phone=" + cellphone + "&type=reset";
     
         // POST 請求必須設置表頭在 open() 下面，send() 上面
         xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
         xhr.setRequestHeader('X-CSRF-TOKEN', $('meta[name="csrf-token"]').attr('content'));
-        xhr.send(phone);
+        xhr.send(params);
     
         if (xhr.status != 200) 
         {
