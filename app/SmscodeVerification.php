@@ -13,11 +13,11 @@ class SmscodeVerification extends Model
     ];
 
     // 算當天驗證次數
-    public function count_times($request)
+    public function count_times($phone)
     {
         
         $count = DB::table('smscode_verifications')
-        ->where('phone', $request->phone)
+        ->where('phone', $phone)
         ->whereRaw("`created_at` BETWEEN CURRENT_DATE AND date_add(now(), interval 1 day)")
         ->count();
 
@@ -32,6 +32,15 @@ class SmscodeVerification extends Model
         ->where('smscode', $smscode)
         ->whereRaw("`created_at` BETWEEN CURRENT_DATE AND date_add(now(), interval 1 day)")
         ->orderBy('created_at', 'desc')
-        ->firstOrFail();
+        ->first();
+    }
+
+    // 查詢資料是否已過期
+    public function valid_time($phone, $smscode)
+    {
+        return SmscodeVerification::where('phone', $phone)
+        ->where('smscode', $smscode)
+        ->whereRaw(" created_at >= now()-interval 2 minute")
+        ->first();
     }
 }

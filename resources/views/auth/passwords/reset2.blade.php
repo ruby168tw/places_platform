@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-{{--  reCAPTCHA  --}}
+{{--  reCAPTCHA  start  --}}
 <script src="https://www.google.com/recaptcha/api.js?hl=zh-TW&render=explicit&onload=onReCaptchaLoad" async defer></script>
 
 <script>
@@ -34,7 +34,8 @@ var verifyCallback = function( recaptcha )
         request.setRequestHeader('X-CSRF-TOKEN', $('meta[name="csrf-token"]').attr('content'));
         request.send(data);
      
-        request.onreadystatechange = function() {
+        request.onreadystatechange = function() 
+        {
             // 伺服器請求完成
             if (request.readyState === 4) {
                 // 伺服器回應成功
@@ -90,6 +91,89 @@ function sendMsg()
         }
     }
 }
+{{--  reCAPTCHA  end  --}}
+
+{{--  顯示reCAPTCHA  --}}
+function show(id)
+{
+    var cellphone = document.getElementById("phone").value;
+
+    // 取得當日總驗證次數 若為非法模式，則得false
+    var times = check_sending_times(cellphone).times;
+    // 取得電話格式驗證結果，若通過則為true，若失敗則為false 
+    var phone = check_sending_times(cellphone).phone;
+
+    if (phone == true)
+    {
+        if (times < 6)
+        {
+            var o=document.getElementById(id);
+            if( o.style.display == 'none' )
+            {
+                o.style.display='';
+            }
+            else
+            {
+                o.style.display='none';
+            }
+            
+            console.log("未滿5次");
+        }
+        else
+        {
+            alert("今日驗證次數已使用完畢囉～(每日限驗證：5次)");
+        }
+    }
+    else
+    {
+        var o=document.getElementById(id);
+        o.style.display='none';
+        alert("手機格式有誤");
+    }
+
+}
+
+{{--  查詢驗證次數  --}}
+function check_sending_times(cellphone)
+{
+    let xhr = new XMLHttpRequest();
+    xhr.open('POST', "{{ route('check_sending_times') }}", false);
+
+    try 
+    {
+        // POST 參數須使用 send() 發送
+        var phone = "phone=" + cellphone;
+    
+        // POST 請求必須設置表頭在 open() 下面，send() 上面
+        xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+        xhr.setRequestHeader('X-CSRF-TOKEN', $('meta[name="csrf-token"]').attr('content'));
+        xhr.send(phone);
+    
+        if (xhr.status != 200) 
+        {
+            alert(`Error ${xhr.status}: ${xhr.statusText}`);
+        } 
+        else 
+        {
+            // 解析回傳結果
+            var timesResult = JSON.parse(xhr.response);
+            
+            // 將結果存入陣列
+            var results = new Object();
+            
+                // 驗證次數
+                results['times'] = timesResult.times;
+                // 手機號碼合法性
+                results['phone'] = timesResult.phone;
+            
+                return results;    
+        }
+    } 
+    catch(err) 
+    { // instead of onerror
+        alert("Request failed");
+    };
+}
 
 </script>
 
@@ -127,10 +211,14 @@ function sendMsg()
                             <div class="col-md-6">
                                 <input id="smscode" type="smscode" class="form-control" name="smscode" value="{{ $smscode ?? old('smscode') }}" required >
                             </div>
-                            <a class="btn btn-link" href="{{ route('callRecaptcha') }}">
+                            <a class="btn btn-link"  onclick='show("myCaptcha")'>
                                 {{ __('發送驗證碼') }}
                             </a>
                         </div>
+
+                        {{-- for showing reCAPTCHA --}}
+                        <div id="myCaptcha" style="display:none"></div> 
+                        <div id="result" style="visibility:hidden"></div> 
                         
                         
                         
@@ -157,9 +245,7 @@ function sendMsg()
                             </div>
                         </div>
 
-                        {{-- for getting reCAPTCHA response --}}
-                        <div id="myCaptcha"></div> 
-                        <div id="result"></div> 
+                        
 
                         <div class="form-group row mb-0">
                             <div class="col-md-6 offset-md-4">

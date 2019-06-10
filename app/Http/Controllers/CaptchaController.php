@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\SmscodeVerification;
 use User;
+use Validator;
 
 class CaptchaController extends Controller
 {
@@ -12,9 +13,14 @@ class CaptchaController extends Controller
     // 執行驗證碼發送及記錄，供前端使用by ajax，在reCAPTCHA驗證完成後
     public function execute_sneding_and_record(Request $request)
     {
-        $mitake_response = $this->send_sms($request);
-        $mitake_results = $this->parse_msg_response($mitake_response);
-        $this->save_into_db($mitake_results, $mitake_response);
+        // 當"phone"存在而且不為空字串
+        if ($request->has('phone'))
+        {
+            $mitake_response = $this->send_sms($request);
+            $mitake_results = $this->parse_msg_response($mitake_response);
+            $this->save_into_db($mitake_results, $mitake_response);
+        }
+        else return false;
     }
 
     
@@ -45,38 +51,34 @@ class CaptchaController extends Controller
     // call 三竹API發送otp簡訊
     public function send_sms(Request $request)
     {
-        // 當"phone"存在而且不為空字串
-        if ($request->has('phone'))
-        {
+        /** to do 
+         * 驗證電話號碼格式:
+         * 如果是9碼，開頭要為9
+         * 如果是10碼，開頭要為09
+         */
+        $code = rand(111111,999999);
+        $url = 'http://smsapi.mitake.com.tw/api/mtk/SmSend?'; 
+        $url .= '&username='.env('MITAKE_USERNAME');
+        $url .= '&password='.env('MITAKE_PASSWORD');
+        $url .= '&dstaddr='.$request->phone;
+        $url .= '&smbody='.urlencode($code);
+        // $url .= '&clientid='.$request->phone; 
+        $url .= '&CharsetURL=UTF-8';
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-type: application/x-www-form-urlencoded'));
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1); 
+        $output = curl_exec($curl);
+        curl_close($curl);
+        $array_outputs = explode("\n", $output);
 
-            /** to do 
-             * 驗證電話號碼格式:
-             * 如果是9碼，開頭要為9
-             * 如果是10碼，開頭要為09
-             */
-            $code = rand(111111,999999);
-            $url = 'http://smsapi.mitake.com.tw/api/mtk/SmSend?'; 
-            $url .= '&username='.env('MITAKE_USERNAME');
-            $url .= '&password='.env('MITAKE_PASSWORD');
-            $url .= '&dstaddr='.$request->phone;
-            $url .= '&smbody='.urlencode($code);
-            // $url .= '&clientid='.$request->phone; 
-            $url .= '&CharsetURL=UTF-8';
-            $curl = curl_init();
-            curl_setopt($curl, CURLOPT_URL, $url);
-            curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-type: application/x-www-form-urlencoded'));
-            curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1); 
-            $output = curl_exec($curl);
-            curl_close($curl);
-            $array_outputs = explode("\n", $output);
-
-            // 放phone和code和captchaid進array_outputs
-            $array_outputs['phone'] = $request->phone;
-            $array_outputs['smscode'] = $code;
-            $array_outputs['captcha'] = $request->id;
-            
-            return $array_outputs;
-        }
+        // 放phone和code和captchaid進array_outputs
+        $array_outputs['phone'] = $request->phone;
+        $array_outputs['smscode'] = $code;
+        $array_outputs['captcha'] = $request->id;
+        
+        return $array_outputs;
+        
     }
 
 
@@ -146,18 +148,22 @@ class CaptchaController extends Controller
          */
     }
 
-    // 驗證點擊“發送驗證碼“資格
-    public function verify_click_sending_quality(Request $request)
+    // 查詢當日發送驗證次數
+    public function check_sending_times(Request $request)
     {
-        // 當"phone"存在而且不為空字串
-        if ($request->has('phone'))
+        $validator = Validator::make($request->all(), ['phone' => 'required|digits_between:9,10'], ['phone.required' => '請填入手機號碼','phone.digits_between:9,10' => '手機號碼格式有錯哦']);
+        
+        if ($validator->passes())
         {
         // 算當天驗證次數
         $verification = new SmscodeVerification();
-        $count = $verification->count_times($request);
+        $count = $verification->count_times($request->phone);
+        return response()->json(["times" => $count, "phone" =>true]);
         }
-        
-        
+        else 
+        {
+            return response()->json(["times" => false, "phone" =>false]);
+        }
     }
 
 }

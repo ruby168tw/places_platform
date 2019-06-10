@@ -26,40 +26,56 @@ class ResetPwController extends Controller
     // 重設密碼
     public function reset(Request $request)
     {
-       $validator = Validator::make($request->all(), $this->rules(), $this->validationErrorMessages());
+        $validator = Validator::make($request->all(), $this->rules(), $this->validationErrorMessages());
+
+        // 驗證資料格式是否正確(phone, smscode, password)
+        if ($validator->passes())
+        {
+            $user = new User();
+
+            // 驗證該組電話號碼是否存在
+            if ($user->check_phone($request->phone))
+            {
+                $record = new SmscodeVerification();
+
+                // 驗證該組phone和smscode是否合法
+                if ($record->phone_smscode_verification_result($request->phone, $request->smscode))
+                {
+                    // 驗證時間是否合法
+                    if ($record->valid_time($request->phone, $request->smscode))
+                    {
+                        $user->update_password($request->phone, $request->password);
+                        echo "更改完成";
+                    }
+                    else 
+                    {
+                        echo "驗證碼已過期";    
+                    }                     
+                }
+                else
+                {
+                     echo "phone:".$request->phone."smscode:".$request->smscode."輸入資訊有誤，請再次確認";
+                }
+            }
+            else
+            {
+                echo "查無此號碼，請再次確認";
+            }
+
+        }
+        else 
+        {
+         return redirect()->back()->withInput()->withErrors($validator->errors()); 
+        }
+
        
-       if ($validator->passes())
-       {
-           $user = new User();
-
-           if ($user->check_phone($request->phone))
-           {
-               $record = new SmscodeVerification();
-
-
-               if ($record->phone_smscode_verification_result($request->phone, $request->smscode))
-               {
-                    $user->update_password($request->phone, $request->password);
-                    echo "更改完成";
-               }
-               else
-               {
-                    echo "phone:".$request->phone."smscode:".$request->smscode."輸入資訊有誤，請再次確認";
-               }
-           }
-           else
-           {
-               echo "查無此號碼，請再次確認";
-           }
-
-       }
-       else 
-       {
-        return redirect()->back()->withInput()->withErrors($validator->errors()); 
-       }
-
        
-       
+    }
+
+    public function test(Request $request)
+    {
+        $record = new SmscodeVerification();
+        echo $record->phone_smscode_verification_result($request->phone, $request->smscode)->created_at;
     }
 
         
@@ -87,20 +103,5 @@ class ResetPwController extends Controller
             'password.confirmed' => '兩次密碼輸入不同哦',
             'password.min:8' => '密碼最少8位哦'
         ];
-    }
-
-    //重設成功
-    protected function sendResetResponse(Request $request, $response)
-    {
-        return redirect($this->redirectPath())
-                            ->with('status', trans($response));
-    }
-
-    //重設失敗
-    protected function sendResetFailedResponse(Request $request, $response)
-    {
-        return redirect()->back()
-                    ->withInput($request->only('phone'))
-                    ->withErrors(['phone' => trans($response)]);
     }
 }

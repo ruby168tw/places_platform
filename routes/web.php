@@ -25,7 +25,16 @@ Route::post('/recaptcha', 'CaptchaController@verify_captcha')->name('verifyRecap
 // 發送簡訊(三竹)及紀錄發送狀況
 Route::post('/msg', 'CaptchaController@execute_sneding_and_record')->name('send_msg');
 
-// 呼叫reCAPTCHA跳出
-Route::get('/recaptcha', 'CaptchaController@verify_click_sending_quality')->name('callRecaptcha');
+// 查詢驗證次數
+Route::post('/check', 'CaptchaController@check_sending_times')->name('check_sending_times');
 
+
+Route::get('hi', function() {
+    echo "hi";
+});
+
+//for 測試/debug用
+Route::get('test', function() {
+    return view('test');
+});
 

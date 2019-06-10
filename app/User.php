@@ -42,7 +42,7 @@ class User extends Authenticatable
     // 查詢該"phone"是否存在
     public function check_phone($phone)
     {
-        return User::where('phone', $phone)->firstOrFail();
+        return User::where('phone', $phone)->first();
     }
 
     // 更新使用者密碼
