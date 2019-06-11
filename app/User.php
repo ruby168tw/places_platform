@@ -40,15 +40,16 @@ class User extends Authenticatable
     ];
 
     // 查詢該"phone"是否存在
-    public function check_phone($phone)
+    public function check_phone($countryCode, $phone)
     {
-        return User::where('phone', $phone)->first();
+        return User::where('countryCode', $countryCode)->where('phone', $phone)->first();
     }
 
     // 更新使用者密碼
-    public function update_password($phone, $password)
+    public function update_password($countryCode, $phone, $password)
     {
         DB::table('users')
+        ->where('countryCode', $countryCode)
         ->where('phone', $phone)
         ->update(['password' => Hash::make($password), 'updated_at' => date('Y-m-d H:i:s')]);
     }

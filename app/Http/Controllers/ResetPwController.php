@@ -33,34 +33,39 @@ class ResetPwController extends Controller
         {
             $user = new User();
 
-            // 驗證該組電話號碼是否存在
-            if ($user->check_phone($request->phone))
+            if ($request->country == "taiwan")
             {
-                $record = new SmscodeVerification();
-
-                // 驗證該組phone和smscode是否合法
-                if ($record->phone_smscode_verification_result($request->phone, $request->smscode))
+                // 驗證該組電話號碼是否存在
+                if ($user->check_phone("886", $request->phone))
                 {
-                    // 驗證時間是否合法
-                    if ($record->valid_time($request->phone, $request->smscode))
+                    $record = new SmscodeVerification();
+
+                    // 驗證該組phone和smscode是否合法
+                    if ($record->phone_smscode_verification_result("886", $request->phone, $request->smscode))
                     {
-                        $user->update_password($request->phone, $request->password);
-                        echo "更改完成";
+                        // 驗證時間是否合法
+                        if ($record->valid_time("886", $request->phone, $request->smscode))
+                        {
+                            $user->update_password("886", $request->phone, $request->password);
+                            echo "更改完成";
+                        }
+                        else 
+                        {
+                            echo "驗證碼已過期";    
+                        }                     
                     }
-                    else 
+                    else
                     {
-                        echo "驗證碼已過期";    
-                    }                     
+                        echo "phone:".$request->phone."smscode:".$request->smscode."輸入資訊有誤，請再次確認";
+                    }
                 }
                 else
                 {
-                     echo "phone:".$request->phone."smscode:".$request->smscode."輸入資訊有誤，請再次確認";
+                    echo "查無此號碼，請再次確認";
                 }
             }
-            else
-            {
-                echo "查無此號碼，請再次確認";
-            }
+
+            
 
         }
         else 

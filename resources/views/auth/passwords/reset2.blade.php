@@ -66,7 +66,7 @@ function sendMsg()
     sending.open("POST", "{{ route('send_msg')}}");
  
     // POST 參數須使用 send() 發送
-    var msgData = "id=" + grecaptcha.getResponse(captchaWidgetId) + "&phone=" + document.getElementById("phone").value + "&type=reset";
+    var msgData = "id=" + grecaptcha.getResponse(captchaWidgetId) + "&country=" + document.getElementsByName("country")[0].value + "&phone=" + document.getElementById("phone").value + "&type=reset";
     console.log(msgData);
  
     // POST 請求必須設置表頭在 open() 下面，send() 上面
@@ -97,11 +97,13 @@ function sendMsg()
 function show(id)
 {
     var cellphone = document.getElementById("phone").value;
+    var country = document.getElementsByName("country")[0].value;
+    console.log(country);
 
     // 取得當日總驗證次數 若為非法模式，則得false
-    var times = check_sending_times(cellphone).times;
+    var times = check_sending_times(country, cellphone).times;
     // 取得電話格式驗證結果，若通過則為true，若失敗則為false 
-    var phone = check_sending_times(cellphone).phone;
+    var phone = check_sending_times(country, cellphone).phone;
 
     if (phone == true)
     {
@@ -134,7 +136,7 @@ function show(id)
 }
 
 {{--  查詢驗證次數  --}}
-function check_sending_times(cellphone)
+function check_sending_times(country, cellphone)
 {
     let xhr = new XMLHttpRequest();
     xhr.open('POST', "{{ route('check_sending_times') }}", false);
@@ -142,7 +144,7 @@ function check_sending_times(cellphone)
     try 
     {
         // POST 參數須使用 send() 發送
-        var params = "phone=" + cellphone + "&type=reset";
+        var params = "phone=" + cellphone + "&country=" + country + "&type=reset";
     
         // POST 請求必須設置表頭在 open() 下面，send() 上面
         xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
@@ -195,7 +197,7 @@ function check_sending_times(cellphone)
                             <label for="phone" class="col-md-4 col-form-label text-md-right">{{ __('手機號碼') }}</label>
 
                             <div class="col-md-6">
-                                <select name="countryCode">
+                                <select name="country">
                                         <option value="taiwan" selected>886</option>
                                 </select>
                                 <input id="phone" type="phone" class="form-control" name="phone" value="{{ $phone ?? old('phone') }}" required autocomplete="phone" autofocus>
