@@ -9,14 +9,15 @@ class SmscodeVerification extends Model
 {
     protected $fillable = 
     [
-        'phone', 'captcha', 'statuscode', 'error', 'msgid', 'smscode', 'type'
+        'phone', 'captcha', 'statuscode', 'error', 'msgid', 'smscode', 'type', 'countryCode'
     ];
 
     // 算當天驗證次數
-    public function count_times($phone, $type)
+    public function count_times($countryCode, $phone, $type)
     {
         
         $count = DB::table('smscode_verifications')
+        ->where('countryCode', $countryCode)
         ->where('phone', $phone)
         ->where('type', $type)
         ->whereRaw("`created_at` BETWEEN CURRENT_DATE AND date_add(now(), interval 1 day)")
@@ -27,9 +28,10 @@ class SmscodeVerification extends Model
 
     
     // 查詢"phone"與"smscode"是否正確
-    public function phone_smscode_verification_result($phone, $smscode)
+    public function phone_smscode_verification_result($countryCode, $phone, $smscode)
     {
-        return SmscodeVerification::where('phone', $phone)
+        return SmscodeVerification::where('countryCode', $countryCode)
+        ->where('phone', $phone)
         ->where('smscode', $smscode)
         ->whereRaw("`created_at` BETWEEN CURRENT_DATE AND date_add(now(), interval 1 day)")
         ->orderBy('created_at', 'desc')
@@ -37,11 +39,12 @@ class SmscodeVerification extends Model
     }
 
     // 查詢資料是否已過期
-    public function valid_time($phone, $smscode)
+    public function valid_time($countryCode, $phone, $smscode)
     {
-        return SmscodeVerification::where('phone', $phone)
+        return SmscodeVerification::where('countryCode', $countryCode)
+        ->where('phone', $phone)
         ->where('smscode', $smscode)
-        ->whereRaw(" created_at >= now()-interval 2 minute")
+        ->whereRaw(" created_at >= now()-interval 10 minute")
         ->first();
     }
 }

@@ -19,44 +19,41 @@ var onReCaptchaLoad = function() {
 
 var verifyCallback = function( recaptcha ) 
 {
-
-    console.log(grecaptcha.getResponse(captchaWidgetId)); 
-
-        // 發送 Ajax 查詢請求並處理
-        var request = new XMLHttpRequest();
-        request.open("POST", "{{ route('verifyRecaptcha')}}");
+    // 發送 Ajax 查詢請求並處理
+    var request = new XMLHttpRequest();
+    request.open("POST", "{{ route('verifyRecaptcha')}}");
      
-        // POST 參數須使用 send() 發送
-        var data = "id=" + grecaptcha.getResponse(captchaWidgetId);
+    // POST 參數須使用 send() 發送
+    var data = "id=" + grecaptcha.getResponse(captchaWidgetId);
      
-        // POST 請求必須設置表頭在 open() 下面，send() 上面
-        request.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-        request.setRequestHeader('X-CSRF-TOKEN', $('meta[name="csrf-token"]').attr('content'));
-        request.send(data);
+    // POST 請求必須設置表頭在 open() 下面，send() 上面
+    request.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+    request.setRequestHeader('X-CSRF-TOKEN', $('meta[name="csrf-token"]').attr('content'));
+    request.send(data);
      
-        request.onreadystatechange = function() 
-        {
-            // 伺服器請求完成
-            if (request.readyState === 4) {
-                // 伺服器回應成功
-                if (request.status === 200) {
-                    //將取得的結果做json解析
-                    var verifyCaptchaResult = JSON.parse(request.responseText);
-                    //取success的結果值
-                    document.getElementById("result").innerHTML=verifyCaptchaResult.success;
-                    //reCAPTCHA驗證成功
-                    if (document.getElementById("result").innerHTML == "true")
-                    {                        
-                        sendMsg();
-                    }
-                    
-                } 
-                else 
-                {
-                    console.log("reCAPTCHA error");
+    request.onreadystatechange = function() 
+    {
+        // 伺服器請求完成
+        if (request.readyState === 4) {
+            // 伺服器回應成功
+            if (request.status === 200) {
+                //將取得的結果做json解析
+                var verifyCaptchaResult = JSON.parse(request.responseText);
+                //取success的結果值
+                document.getElementById("result").innerHTML=verifyCaptchaResult.success;
+                //reCAPTCHA驗證成功
+                if (document.getElementById("result").innerHTML == "true")
+                {                        
+                    sendMsg();
                 }
+                    
+            } 
+            else 
+            {
+                console.log("reCAPTCHA error");
             }
         }
+    }
 };
 
 function sendMsg()
@@ -66,7 +63,7 @@ function sendMsg()
     sending.open("POST", "{{ route('send_msg')}}");
  
     // POST 參數須使用 send() 發送
-    var msgData = "id=" + grecaptcha.getResponse(captchaWidgetId) + "&phone=" + document.getElementById("phone").value + "&type=register";
+    var msgData = "id=" + grecaptcha.getResponse(captchaWidgetId) + "&country=" + document.getElementsByName("country")[0].value + "&phone=" + document.getElementById("phone").value + "&type=register";
     console.log(msgData);
  
     // POST 請求必須設置表頭在 open() 下面，send() 上面
@@ -97,11 +94,13 @@ function sendMsg()
 function show(id)
 {
     var cellphone = document.getElementById("phone").value;
+    var country = document.getElementsByName("country")[0].value;
+    console.log(country);
 
     // 取得當日總驗證次數 若為非法模式，則得false
-    var times = check_sending_times(cellphone).times;
+    var times = check_sending_times(country, cellphone).times;
     // 取得電話格式驗證結果，若通過則為true，若失敗則為false 
-    var phone = check_sending_times(cellphone).phone;
+    var phone = check_sending_times(country, cellphone).phone;
 
     if (phone == true)
     {
@@ -134,7 +133,7 @@ function show(id)
 }
 
 {{--  查詢驗證次數  --}}
-function check_sending_times(cellphone)
+function check_sending_times(country, cellphone)
 {
     let xhr = new XMLHttpRequest();
     xhr.open('POST', "{{ route('check_sending_times') }}", false);
@@ -142,7 +141,7 @@ function check_sending_times(cellphone)
     try 
     {
         // POST 參數須使用 send() 發送
-        var params = "phone=" + cellphone + "&type=register";
+        var params = "phone=" + cellphone + "&country=" + country + "&type=register";
     
         // POST 請求必須設置表頭在 open() 下面，send() 上面
         xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
@@ -194,6 +193,9 @@ function check_sending_times(cellphone)
                             <label for="phone" class="col-md-4 col-form-label text-md-right">{{ __('手機號碼') }}</label>
 
                             <div class="col-md-6">
+                                <select name="country">
+                                        <option value="taiwan" selected>886</option>
+                                </select>
                                 <input id="phone" type="phone" class="form-control @error('phone') is-invalid @enderror" name="phone" value="{{ old('phone') }}" required autocomplete="phone">
 
                                 @error('phone')

@@ -195,6 +195,9 @@ function check_sending_times(cellphone)
                             <label for="phone" class="col-md-4 col-form-label text-md-right">{{ __('手機號碼') }}</label>
 
                             <div class="col-md-6">
+                                <select name="countryCode">
+                                        <option value="taiwan" selected>886</option>
+                                </select>
                                 <input id="phone" type="phone" class="form-control" name="phone" value="{{ $phone ?? old('phone') }}" required autocomplete="phone" autofocus>
 
                                 @error('phone')

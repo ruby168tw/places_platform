@@ -19,15 +19,17 @@ class CaptchaController extends Controller
             $mitake_response = $this->send_sms($request);
             $mitake_results = $this->parse_msg_response($mitake_response);
 
-            if ($request->type == "reset")
+            if ($request->country == "taiwan")
             {
-                $this->save_into_db($mitake_results, $mitake_response, "reset");
-            }
-            else if ($request->type == "register")
-            {
-                $this->save_into_db($mitake_results, $mitake_response, "register");
-            }
-            
+                if ($request->type == "reset")
+                {
+                    $this->save_into_db($mitake_results, $mitake_response, "reset", "886");
+                }
+                else if ($request->type == "register")
+                {
+                    $this->save_into_db($mitake_results, $mitake_response, "register", "886");
+                }
+            }    
         }
         else return false;
     }
@@ -66,11 +68,12 @@ class CaptchaController extends Controller
          * 如果是10碼，開頭要為09
          */
         $code = rand(111111,999999);
+        $msg = "您的bextrip景點營運平台驗證碼為:".$code."，此驗證碼10分鐘內有效";
         $url = 'http://smsapi.mitake.com.tw/api/mtk/SmSend?'; 
         $url .= '&username='.env('MITAKE_USERNAME');
         $url .= '&password='.env('MITAKE_PASSWORD');
         $url .= '&dstaddr='.$request->phone;
-        $url .= '&smbody='.urlencode($code);
+        $url .= '&smbody='.urlencode($msg);
         // $url .= '&clientid='.$request->phone; 
         $url .= '&CharsetURL=UTF-8';
         $curl = curl_init();
@@ -138,15 +141,15 @@ class CaptchaController extends Controller
     }
 
     //  存發送簡訊驗證碼紀錄
-    public function save_into_db($mitake_results, $params, $type)
+    public function save_into_db($mitake_results, $params, $type, $countryCode)
     {
         if (empty($mitake_results['msgid']))
         {
-            \App\SmscodeVerification::create(['phone' => $params['phone'], 'captcha' => $params['captcha'], 'statuscode' => $mitake_results['statuscode'], 'error' => $mitake_results['error'], 'smscode' => $params['smscode'], 'type' => $type]);
+            \App\SmscodeVerification::create(['phone' => $params['phone'], 'captcha' => $params['captcha'], 'statuscode' => $mitake_results['statuscode'], 'error' => $mitake_results['error'], 'smscode' => $params['smscode'], 'type' => $type, 'countryCode' => $countryCode]);
         }
         else
         {
-            \App\SmscodeVerification::create(['phone' => $params['phone'], 'captcha' => $params['captcha'], 'statuscode' => $mitake_results['statuscode'], 'msgid' => $mitake_results['msgid'], 'smscode' => $params['smscode'], 'type' => $type]);
+            \App\SmscodeVerification::create(['phone' => $params['phone'], 'captcha' => $params['captcha'], 'statuscode' => $mitake_results['statuscode'], 'msgid' => $mitake_results['msgid'], 'smscode' => $params['smscode'], 'type' => $type, 'countryCode' => $countryCode]);
         }        
     }
 
@@ -157,10 +160,13 @@ class CaptchaController extends Controller
         
         if ($validator->passes())
         {
-        // 算當天驗證次數
-        $verification = new SmscodeVerification();
-        $count = $verification->count_times($request->phone, $request->type);
-        return response()->json(["times" => $count, "phone" =>true]);
+            if ($request->country == "taiwan")
+            {
+                // 算當天驗證次數
+                $verification = new SmscodeVerification();
+                $count = $verification->count_times("886", $request->phone, $request->type);
+                return response()->json(["times" => $count, "phone" =>true]);
+            }   
         }
         else 
         {
