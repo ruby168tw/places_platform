@@ -17,6 +17,12 @@
 
 Auth::routes();
 
+// RESTful for OrganizationsController 自定義路由須加在resource前
+Route::get('organizations/search','OrganizationsController@search')->name('organizations.search');
+Route::resource('organizations', 'OrganizationsController');
+
+
+
 Route::get('/home', 'HomeController@index')->name('home');
 
 // 驗證reCAPTCHA
@@ -29,7 +35,7 @@ Route::post('/msg', 'CaptchaController@execute_sneding_and_record')->name('send_
 Route::post('/check', 'CaptchaController@check_sending_times')->name('check_sending_times');
 
 
-Route::get('hi', function() {
+Route::get('hi/hi', function() {
     echo "hi";
 });
 

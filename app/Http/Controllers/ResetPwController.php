@@ -79,8 +79,7 @@ class ResetPwController extends Controller
 
     public function test(Request $request)
     {
-        $record = new SmscodeVerification();
-        echo $record->phone_smscode_verification_result($request->phone, $request->smscode)->created_at;
+        echo "hi";
     }
 
         

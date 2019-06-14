@@ -7,14 +7,13 @@
             <div class="card">
                 <div class="card-header">Dashboard</div>
 
-                <div class="card-body">
-                    @if (session('status'))
-                        <div class="alert alert-success" role="alert">
-                            {{ session('status') }}
-                        </div>
-                    @endif
+                <form action="{{ route('organizations.search')}}" method="get">
+                    @csrf
+                    單位名稱：<input name="organization">
+                    <button type="submit">送出</button>
 
-                    You are logged in!
+                </form>
+
                 </div>
             </div>
         </div>

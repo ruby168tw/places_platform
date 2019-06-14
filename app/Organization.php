@@ -12,4 +12,8 @@ class Organization extends Model
         return $this->belongsToMany('App\Member')->withTimestamps();
     }
     
+    public function search($query)
+    {
+        $result =  Organization::where('name', $query)->first();
+    }
 }
